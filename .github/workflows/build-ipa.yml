@@ -32,6 +32,18 @@ jobs:
           rm StandRise_iOS.tar.gz StandRise_iOS_part*
           ls -la StandRise_iOS_Xcode
 
+      - name: Patch Missing System Libraries (sqlite3 & xml2 for Heyzap Ads)
+        run: |
+          python3 -c "
+          p = 'StandRise_iOS_Xcode/Unity-iPhone.xcodeproj/project.pbxproj'
+          with open(p, 'r') as f:
+              s = f.read()
+          s = s.replace('\"-weak-lSystem\",', '\"-weak-lSystem\",\n\t\t\t\t\t\"-lsqlite3\",\n\t\t\t\t\t\"-lxml2\",')
+          with open(p, 'w') as f:
+              f.write(s)
+          print('Successfully added -lsqlite3 and -lxml2 to UnityFramework linker flags!')
+          "
+
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode.app
 
@@ -47,6 +59,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGN_IDENTITY="" \
             PROVISIONING_PROFILE="" \
+            OTHER_LDFLAGS='$(inherited) -lsqlite3 -lxml2' \
             -derivedDataPath build
 
       - name: Package into IPA
