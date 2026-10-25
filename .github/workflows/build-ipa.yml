@@ -44,6 +44,16 @@ jobs:
           print('Successfully added -lsqlite3 and -lxml2 to UnityFramework linker flags!')
           "
 
+      - name: Bypass Unity Crash Symbols Processing (usymtool)
+        run: |
+          cat << 'EOF' > StandRise_iOS_Xcode/process_symbols.sh
+          #!/bin/sh
+          echo "Bypassing usymtool symbol processing"
+          exit 0
+          EOF
+          chmod +x StandRise_iOS_Xcode/process_symbols.sh
+          echo "process_symbols.sh patched to exit 0."
+
       - name: Install CocoaPods (Firebase SDK)
         run: |
           cd StandRise_iOS_Xcode
@@ -65,6 +75,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGN_IDENTITY="" \
             PROVISIONING_PROFILE="" \
+            DEBUG_INFORMATION_FORMAT="dwarf" \
             -derivedDataPath build
 
       - name: Package into IPA
