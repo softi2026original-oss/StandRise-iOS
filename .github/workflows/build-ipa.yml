@@ -44,14 +44,20 @@ jobs:
           print('Successfully added -lsqlite3 and -lxml2 to UnityFramework linker flags!')
           "
 
+      - name: Install CocoaPods (Firebase SDK)
+        run: |
+          cd StandRise_iOS_Xcode
+          echo "Installing CocoaPods dependencies..."
+          pod install --repo-update
+
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode.app
 
-      - name: Build Xcode Project
+      - name: Build Xcode Workspace
         run: |
           cd StandRise_iOS_Xcode
           xcodebuild clean build \
-            -project Unity-iPhone.xcodeproj \
+            -workspace Unity-iPhone.xcworkspace \
             -scheme Unity-iPhone \
             -destination "generic/platform=iOS" \
             -configuration Release \
@@ -59,7 +65,6 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGN_IDENTITY="" \
             PROVISIONING_PROFILE="" \
-            OTHER_LDFLAGS='$(inherited) -lsqlite3 -lxml2' \
             -derivedDataPath build
 
       - name: Package into IPA
