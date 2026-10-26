@@ -78,14 +78,43 @@ jobs:
             DEBUG_INFORMATION_FORMAT="dwarf" \
             -derivedDataPath build
 
-      - name: Package into IPA
+      - name: Package into IPA (with complete Frameworks & Plist injection)
         run: |
           cd StandRise_iOS_Xcode
           APP_PATH=$(find build/Build/Products/Release-iphoneos -name "*.app" | head -n 1)
           echo "Found compiled App: $APP_PATH"
+
+          # 1. Ensure Frameworks directory exists
+          mkdir -p "$APP_PATH/Frameworks"
+
+          # 2. Embed UnityFramework.framework
+          if [ -d "build/Build/Products/Release-iphoneos/UnityFramework.framework" ]; then
+            echo "Embedding UnityFramework.framework..."
+            cp -r build/Build/Products/Release-iphoneos/UnityFramework.framework "$APP_PATH/Frameworks/"
+          fi
+
+          # 3. Embed all dynamic frameworks from build products
+          for fw in build/Build/Products/Release-iphoneos/*.framework; do
+            if [ -d "$fw" ]; then
+              fw_name=$(basename "$fw")
+              if [ ! -d "$APP_PATH/Frameworks/$fw_name" ]; then
+                echo "Embedding dynamic framework: $fw_name"
+                cp -r "$fw" "$APP_PATH/Frameworks/"
+              fi
+            fi
+          done
+
+          # 4. Inject GoogleService-Info.plist into .app root so Firebase doesn't crash on start
+          if [ -f "GoogleService-Info.plist" ]; then
+            echo "Injecting GoogleService-Info.plist into $APP_PATH..."
+            cp "GoogleService-Info.plist" "$APP_PATH/"
+          fi
+
+          # 5. Build clean IPA Payload
+          rm -rf Payload StandRise.ipa
           mkdir -p Payload
           cp -r "$APP_PATH" Payload/
-          zip -r StandRise.ipa Payload
+          zip -r -9 StandRise.ipa Payload
           ls -lh StandRise.ipa
 
       - name: Upload IPA to GitHub Release
